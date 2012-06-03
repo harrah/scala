@@ -297,7 +297,7 @@ trait Trees extends api.Trees { self: SymbolTable =>
 
   protected[scala] def duplicateTree(tree: Tree): Tree = duplicator transform tree
 
-  private lazy val duplicator = new Transformer {
+  lazy val duplicator: Transformer = new Transformer {
     override val treeCopy = newStrictTreeCopier
     override def transform(t: Tree) = {
       val t1 = super.transform(t)

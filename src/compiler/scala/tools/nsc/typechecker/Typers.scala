@@ -2744,6 +2744,21 @@ trait Typers extends Modes with Adaptations with Taggings {
       }
     }
 
+
+    /** `true` if the symbol has the shortcutOverloading annotation */
+    final def isShortcut(s: Symbol): Boolean = s.hasAnnotation(ShortcutOverloadingAnnot)
+    /** `true` if the type  has the shortcutOverloading annotation after removing any by-name wrapper */
+    final def isShortcutType(t: Type): Boolean = t match {
+      case TypeRef(_, ByNameParamClass, arg :: _) => isShortcutType(arg)
+      case TypeRef(pre, sym, args) => isShortcut(sym)
+      case _ => false
+    }
+    /** `true` if the given type is a method with a single parameter with a type annotated with `shortcutOverloading`*/
+    final def isShortcutMethod(tp: Type): Boolean = tp match {
+      case MethodType(List(param), _) if isShortcutType(param.info) => true
+      case _ => false
+    }
+
     def doTypedApply(tree: Tree, fun0: Tree, args: List[Tree], mode: Int, pt: Type): Tree = {
       // TODO_NMT: check the assumption that args nonEmpty
       def duplErrTree = setError(treeCopy.Apply(tree, fun0, args))
@@ -2797,6 +2812,11 @@ trait Typers extends Modes with Adaptations with Taggings {
 
           val argtpes = new ListBuffer[Type]
           val amode = forArgMode(fun, mode)
+
+          // copy the original argument trees so that we can redo type inference
+          //  for arguments that shortcut overloading
+          val originalArgs = args.map(duplicator transform _)
+
           val args1 = args map {
             case arg @ AssignOrNamedArg(Ident(name), rhs) =>
               // named args: only type the righthand sides ("unknown identifier" errors otherwise)
@@ -2810,6 +2830,40 @@ trait Typers extends Modes with Adaptations with Taggings {
               arg1
           }
           context.undetparams = undetparams
+
+          // Will contain the alternatives with a single parameter marked with the `shortcutOverloading` annotation
+          //  if there is a single argument with a type that is also marked with that annotation
+          val shortcuts = new ListBuffer[Symbol]
+          // Will contain the alternatives that do not have the `shortcutOverloading` annotation, regardless of what the arguments are
+          val notShortcuts = new ListBuffer[Symbol]
+          // Set to true if any alternatives have `shortcutOverloading`, regardless of whether arguments also have the annotation
+          var anyShortcuts = false
+          for(alt <- alts) {
+            if( isShortcutMethod(followApply(pre memberType alt)) ) {
+              anyShortcuts = true
+               // this pattern match could get lifted out of the loop to a precomputed boolean,
+               //   but this makes it easier to change the isShortcut test to use `alt` in the future
+              argtpes.toList match {
+                case x :: Nil if isShortcutType(x) => shortcuts += alt
+                case _ =>
+              }
+            } 
+            else notShortcuts += alt
+          }
+
+          // Only filter alternatives if any alternatives are marked with the `shortcutOverloading` annotation
+          if(anyShortcuts) {
+            val newAlts = if(shortcuts.nonEmpty) shortcuts.toList else notShortcuts.toList
+            // if there is exactly one alternative remaining, take the shortcut
+            if(newAlts.tail.isEmpty) {
+              // retype the application for proper type inference and warning messages
+              fun.setSymbol(newAlts.head).setType(pre.memberType(newAlts.head))
+              return doTypedApply(tree, adapt(fun, forFunMode(mode), WildcardType), originalArgs, mode, pt)
+            }
+            else // otherwise, continue overloading resolution but with fewer alternatives
+              fun.setType(OverloadedType(pre, newAlts))
+          }
+
           if (context.hasErrors)
             setError(tree)
           else {

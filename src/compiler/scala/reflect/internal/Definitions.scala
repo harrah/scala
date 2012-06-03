@@ -895,6 +895,7 @@ trait Definitions extends reflect.api.StandardDefinitions {
     def Object_hashCode  = getMember(ObjectClass, nme.hashCode_)
     def Object_toString  = getMember(ObjectClass, nme.toString_)
 
+
     // boxed classes
     lazy val ObjectRefClass         = requiredClass[scala.runtime.ObjectRef[_]]
     lazy val VolatileObjectRefClass = requiredClass[scala.runtime.VolatileObjectRef[_]]
@@ -953,6 +954,9 @@ trait Definitions extends reflect.api.StandardDefinitions {
     lazy val UncheckedClass             = requiredClass[scala.unchecked]
     lazy val UnspecializedClass         = requiredClass[scala.annotation.unspecialized]
     lazy val VolatileAttr               = requiredClass[scala.volatile]
+
+    lazy val ShortcutOverloadingAnnot   = requiredClass[scala.annotation.shortcutOverloading]
+
 
     // Meta-annotations
     lazy val BeanGetterTargetClass      = requiredClass[meta.beanGetter]

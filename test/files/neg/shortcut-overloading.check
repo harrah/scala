@@ -1,0 +1,57 @@
+shortcut.scala:24: error: type mismatch;
+ found   : Boolean(true)
+ required: Int
+  val s = a := true
+               ^
+shortcut.scala:25: error: type mismatch;
+ found   : Boolean
+ required: Int
+  val t = a := Init.value { val x = false; x }
+                                           ^
+shortcut.scala:33: error: type mismatch;
+ found   : Boolean(true)
+ required: List[Int]
+  val q = b := true
+               ^
+shortcut.scala:34: error: type mismatch;
+ found   : Boolean(true)
+ required: Int
+  val r = b := List(true)
+                    ^
+no_shortcut.scala:24: error: overloaded method value := with alternatives:
+  (i: noshortcut.Initialize[Int])noshortcut.Setting[Int] <and>
+  (t: => Int)noshortcut.Setting[Int]
+ cannot be applied to (Boolean)
+  val s = a := true
+            ^
+no_shortcut.scala:25: error: overloaded method value := with alternatives:
+  (i: noshortcut.Initialize[Int])noshortcut.Setting[Int] <and>
+  (t: => Int)noshortcut.Setting[Int]
+ cannot be applied to (noshortcut.Initialize[Boolean])
+  val t = a := Init.value { val x = false; x }
+            ^
+no_shortcut.scala:30: error: ambiguous reference to overloaded definition,
+both method := in class Key of type (i: noshortcut.Initialize[T])noshortcut.Setting[T]
+and  method := in class Key of type (t: => T)noshortcut.Setting[T]
+match argument types (noshortcut.Initialize[Int])
+  val p = (new Key("infer")) := Init.value(9)
+                             ^
+no_shortcut.scala:33: error: overloaded method value := with alternatives:
+  (i: noshortcut.Initialize[List[Int]])noshortcut.Setting[List[Int]] <and>
+  (t: => List[Int])noshortcut.Setting[List[Int]]
+ cannot be applied to (Boolean)
+  val q = b := true
+            ^
+no_shortcut.scala:34: error: overloaded method value := with alternatives:
+  (i: noshortcut.Initialize[List[Int]])noshortcut.Setting[List[Int]] <and>
+  (t: => List[Int])noshortcut.Setting[List[Int]]
+ cannot be applied to (List[Boolean])
+  val r = b := List(true)
+            ^
+no_shortcut.scala:39: error: ambiguous reference to overloaded definition,
+both method := in class Key of type (i: noshortcut.Initialize[T])noshortcut.Setting[T]
+and  method := in class Key of type (t: => T)noshortcut.Setting[T]
+match argument types (noshortcut.Initialize[List[Boolean]])
+  val c = (new Key("infer")) := Init.value(List(true))
+                             ^
+10 errors found
